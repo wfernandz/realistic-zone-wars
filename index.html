@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Royale Estilo Fortnite</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #4a90e2, #87ceeb);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* HUD Estilo Fortnite */
+        .hud {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        /* Materiales (Arriba a la derecha) */
+        .materials {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 16px;
+        }
+
+        /* Vida y Escudo (Abajo a la izquierda) */
+        .health-shield {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 320px;
+        }
+
+        .bar-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 3px;
+            letter-spacing: 1px;
+        }
+
+        .bar-container {
+            width: 100%;
+            height: 22px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #fff;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .shield-fill { width: 100%; height: 100%; background: #00a2e8; transition: width 0.2s; }
+        .health-fill { width: 100%; height: 100%; background: #ffffff; transition: width 0.2s; }
+
+        /* Inventario de Armas y Objetos (Abajo en el centro) */
+        .inventory-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .slot {
+            width: 75px;
+            height: 75px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            text-align: center;
+            position: relative;
+        }
+
+        .slot.active {
+            border-color: #f3f312;
+            box-shadow: 0 0 10px #f3f312;
+        }
+
+        .slot-key {
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            font-size: 10px;
+            color: #aaa;
+        }
+
+        /* Rarezas de Objetos y Armas */
+        .rarity-common { border-color: #606060; background: rgba(96,96,96,0.5); }       /* Gris */
+        .rarity-uncommon { border-color: #22b14c; background: rgba(34,177,76,0.5); }     /* Verde */
+        .rarity-rare { border-color: #00a2e8; background: rgba(0,162,232,0.5); }         /* Azul */
+        .rarity-epic { border-color: #a349a4; background: rgba(163,73,164,0.5); }       /* Morado */
+        .rarity-legendary { border-color: #ff7f27; background: rgba(255,127,39,0.5); }   /* Naranja */
+        .rarity-mythic { border-color: #ffc90e; background: rgba(255,201,14,0.5); }      /* Dorado */
+
+        /* Panel central de instrucciones / simulación del mundo */
+        .world-view {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1 { margin-top: 0; font-size: 24px; color: #f3f312; }
+        p { font-size: 14px; color: #ddd; }
+        
+        .controls-info {
+            margin-top: 15px;
+            font-size: 13px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Simulación Visual del Entorno -->
+        <div class="world-view">
+            <h1>FORTNITE JS BATTLE ROYALE</h1>
+            <p>Simulador de Inventario, Rarezas, Materiales y HUD</p>
+            <div class="controls-info">
+                <strong>Controles Simulados:</strong><br>
+                • Teclas [1] a [5]: Cambiar de ranura de inventario<br>
+                • Tecla [E]: Interactuar / Abrir cofre<br>
+                • Tecla [Shift]: Correr más rápido<br>
+                • Tecla [Space]: Saltar / Paracaídas
+            </div>
+        </div>
+
+        <!-- HUD Estilo Fortnite -->
+        <div class="hud">
+            <!-- Materiales -->
+            <div class="materials">
+                <div>🪵 Madera: <span id="mat-wood">150</span></div>
+                <div>🧱 Ladrillo: <span id="mat-brick">100</span></div>
+                <div>⚙️ Metal: <span id="mat-metal">50</span></div>
+            </div>
+
+            <!-- Vida y Escudo -->
+            <div class="health-shield">
+                <div class="bar-label">ESCUDO</div>
+                <div class="bar-container"><div class="shield-fill" id="shieldBar" style="width: 100%;"></div></div>
+                <div class="bar-label">VIDA</div>
+                <div class="bar-container"><div class="health-fill" id="healthBar" style="width: 100%;"></div></div>
+            </div>
+
+            <!-- Inventario (5 Espacios Clásicos) -->
+            <div class="inventory-bar">
+                <div class="slot active" id="slot-0">
+                    <span class="slot-key">1</span>
+                    <span id="item-0">Escopeta<br><small style="color:#00a2e8">Rara</small></span>
+                </div>
+                <div class="slot" id="slot-1">
+                    <span class="slot-key">2</span>
+                    <span id="item-1">Fusil<br><small style="color:#22b14c">Verde</small></span>
+                </div>
+                <div class="slot" id="slot-2">
+                    <span class="slot-key">3</span>
+                    <span id="item-2">Botiquín<br><small>Vida</small></span>
+                </div>
+                <div class="slot" id="slot-3">
+                    <span class="slot-key">4</span>
+                    <span id="item-3">Escudos<br><small>+50</small></span>
+                </div>
+                <div class="slot" id="slot-4">
+                    <span class="slot-key">5</span>
+                    <span id="item-4">Madera<br><small>Construir</small></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lógica del juego y controles
+        let currentSlot = 0;
+        let wood = 150, brick = 100, metal = 50;
+        let health = 100, shield = 100;
+
+        const inventoryItems = [
+            { name: "Escopeta", rarity: "rare", desc: "Daño: 95" },
+            { name: "Fusil Asalto", rarity: "uncommon", desc: "Daño: 33" },
+            { name: "Botiquín", rarity: "common", desc: "Cura 100" },
+            { name: "Escudos P.", rarity: "rare", desc: "Escudo +50" },
+            { name: "Materiales", rarity: "epic", desc: "Construcción" }
+        ];
+
+        // Manejo de teclado para cambiar de objeto o interactuar
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+
+            // Cambio de ranura con teclas 1-5
+            if (key >= '1' && key <= '5') {
+                let index = parseInt(key) - 1;
+                selectSlot(index);
+            }
+
+            // Tecla E para interactuar (Simula abrir un cofre o recoger materiales)
+            if (key === 'e' || key === 'E') {
+                wood += 30;
+                brick += 20;
+                document.getElementById('mat-wood').innerText = wood;
+                document.getElementById('mat-brick').innerText = brick;
+                alert("¡Cofre abierto! Recogiste materiales y munición.");
+            }
+        });
+
+        function selectSlot(index) {
+            // Remover clase active anterior
+            document.getElementById(`slot-${currentSlot}`).classList.remove('active');
+            currentSlot = index;
+            // Activar nuevo slot
+            document.getElementById(`slot-${currentSlot}`).classList.add('active');
+            console.log(`Ranura seleccionada: ${index + 1} - Objeto: ${inventoryItems[index].name}`);
+        }
+    </script>
+</body>
+</html>
